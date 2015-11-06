@@ -1,0 +1,15 @@
+data(airquality)
+
+head(airquality)
+
+RadiationModel1 <- lm(Solar.R ~ Ozone + Temp + Month + Day, data = airquality)
+RadiationModel2 <- lm(formula = Solar.R ~ Ozone + Wind + Temp + Month +Day, data = airquality)
+
+anova(RadiationModel1, RadiationModel2)
+Analysis of Variance Table
+
+Model 1: Solar.R ~ Ozone + Temp + Month + Day
+Model 2: Solar.R ~ Ozone + Wind + Temp + Month + Day
+  Res.Df    RSS Df Sum of Sq	  F Pr(>F)
+1    106 770009
+2    105 759954  1     10055 1.3893 0.2412

@@ -1,0 +1,75 @@
+library(DAAG)
+
+data(esoph)
+
+head(esoph)
+
+?esoph
+
+esoph$agegp <- factor(esoph$agegp)
+esoph$alcgp <- factor(esoph$alcgp)
+esoph$tobgp <- factor(esoph$tobgp)
+
+cv.lm(data = esoph, m = 10, form.lm = formula(ncases ~ agegp))
+Analysis of Variance Table
+
+Response: ncases
+          Df Sum Sq Mean Sq F value  Pr(>F)    
+agegp      5    261    52.2    10.8 5.7e-08 ***
+Residuals 82    398     4.9                    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+fold 1 
+Observations in test set: 8 
+            5         9         25        30        41        47       
+agegp       "25-34"   "25-34"   "35-44"   "35-44"   "45-54"   "55-64"  
+cvpred      "0.0769"  "0.0769"  "0.5385"  "0.5385"  "3.0000"  "4.9333" 
+ncases      "0"       "0"       "0"       "2"       "1"       "2"      
+CV residual "-0.0769" "-0.0769" "-0.5385" " 1.4615" "-2.0000" "-2.9333"
+            84        86       
+agegp       "75+"     "75+"    
+cvpred      "1.2222"  "1.2222" 
+ncases      "1"       "1"      
+CV residual "-0.2222" "-0.2222"
+
+Sum of squares = 15.1    Mean square = 1.89    n = 8 
+
+...
+
+Overall (Sum over all 8 folds) 
+  ms 
+5.48 
+
+CVlm(data = esoph, m = 10, form.lm = formula(ncases ~ . ))
+Analysis of Variance Table
+
+Response: ncases
+          Df Sum Sq Mean Sq F value  Pr(>F)    
+agegp      5  261.2    52.2   13.69 1.7e-09 ***
+alcgp      3   52.7    17.6    4.60  0.0052 ** 
+tobgp      3   54.7    18.2    4.78  0.0042 ** 
+ncontrols  1    4.7     4.7    1.23  0.2710    
+Residuals 75  286.2     3.8                    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+
+fold 1 
+Observations in test set: 8 
+                5      9     25     30    41    47    84     86
+Predicted    2.44  0.751  0.802 -0.373  2.11  5.43  1.36  1.220
+cvpred       3.11  1.288  0.657 -0.909  2.10  6.21  1.34  1.289
+ncases       0.00  0.000  0.000  2.000  1.00  2.00  1.00  1.000
+CV residual -3.11 -1.288 -0.657  2.909 -1.10 -4.21 -0.34 -0.289
+
+Sum of squares = 39.3    Mean square = 4.91    n = 8 
+
+...
+
+Overall (Sum over all 8 folds) 
+  ms 
+6.81
+

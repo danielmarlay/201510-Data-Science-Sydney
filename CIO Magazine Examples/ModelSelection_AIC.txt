@@ -1,0 +1,12 @@
+data(airquality)
+
+head(airquality)
+
+RadiationModel1 <- lm(formula = Solar.R ~ Ozone, data = airquality)
+RadiationModel2 <- lm(Solar.R ~ . , data = airquality)
+
+AIC(RadiationModel1, RadiationModel2)
+		df	AIC
+RadiationModel1	3  1307.423
+RadiationModel2 7  1309.299
+

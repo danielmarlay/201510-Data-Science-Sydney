@@ -1,0 +1,21 @@
+HousingNY <- read.table("http://www.jaredlander.com/data/housing.csv", sep = ",", header = TRUE)
+
+head(HousingNY)
+
+HousingNY$Neighborhood <- factor(HousingNY$Neighborhood)
+is.factor(HousingNY$Neighborhood)
+
+HousingNY$Building.Classification <- factor(HousingNY$Building.Classification)
+is.factor(HousingNY$Building.Classification)
+
+HousingNY$Boro <- factor(HousingNY$Boro)
+is.factor(HousingNY$Boro)
+
+NYHousingModel1 <- lm(formula = Market.Value.per.SqFt ~ Neighborhood, data = HousingNY)
+NYHousingModel2 <- lm(Market.Value.per.SqFt ~ . , data = HousingNY)
+
+summary(NYHousingModel1)$r.squared
+0.761727
+
+summary(NYHousingModel2)$r.squared
+0.9693433
