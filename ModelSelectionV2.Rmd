@@ -16,24 +16,27 @@ prostate <- read.table("Input/prostate.data")
 
 ## Objectives of model selection
 
-+---------------+-----------------------------+
-| Objective     | Key Questions               |
-+===============+=============================+
-| Performance   | - Is our model good enough? |
-|               | - Which model is best?      |
-|               | - How well will it perform? |
-+---------------+-----------------------------+
-| Validity      | - Is our model overfitted to|
-|               |   the data?                 |
-|               | - Will the model work when  |
-|               |   in production?            |
-+---------------+-----------------------------+
-| Usability     | - Will the business accept  |
-|               |   it?                       |
-|               | - Can it be put into        |
-|               |   production?               |
-|               | - Will it last?             |
-+---------------+-----------------------------+
++---------------+----------------------------------------+
+| Objective     | Key Questions                          |
++===============+========================================+
+| Performance   | - Is our model good enough?            |
+|               | - Which model is best?                 |
+|               | (algorithm,                            |
+|               | features,                              |
+|               | tuning parameters)                     |
+|               | - How well will it perform?            |
++---------------+----------------------------------------+
+| Validity      | - Is our model overfitted to           |
+|               |   the data?                            |
+|               | - Will the model work when             |
+|               |   in production?                       |
++---------------+----------------------------------------+
+| Usability     | - Will the business accept             |
+|               |   it?                                  |
+|               | - Can it be put into                   |
+|               |   production?                          |
+|               | - Will it last?                        |
++---------------+----------------------------------------+
 
 # Example data and models
 
@@ -70,13 +73,14 @@ summary(model3);
 
 # Performance
 
-## R^2
+## $R^2$
 
- - R^2 is one of the most commonly used measures for assessing model fit in regressiong models
+ - $R^2$ is one of the most commonly used measures for assessing model fit in regressiong models
  - Defined as 1-(Residuals Sum of Squares / Overall Sum of Squares)
- - Interpreted as "percentage of variation explained by the model"
+ - Often interpreted as "percentage of variation explained by the model"
+ - Not necessarily the square of the Pearson Correlation
 
-## R^2 - Model 1
+## $R^2$ - Model 1
 
 ```{r}
 rsq <- function (y,yhat) {return(1 - (sum((y-yhat)^2)/sum((y-mean(y))^2)));}
@@ -88,17 +92,23 @@ rsq(prostate$lpsa[!prostate$train],
     predict(model1,newdata=prostate[!prostate$train,]));
 ```
 
-## R^2 - Model 2
+## $R^2$ - Model 2
 
 ```{r}
 rsq(prostate$lpsa[prostate$train],
     predict(model2,newdata=prostate[prostate$train,]));
 
+(cor(prostate$lpsa[prostate$train],
+     predict(model2,newdata=prostate[prostate$train,])))^2
+
 rsq(prostate$lpsa[!prostate$train],
     predict(model2,newdata=prostate[!prostate$train,]));
+
+(cor(prostate$lpsa[!prostate$train],
+     predict(model2,newdata=prostate[!prostate$train,])))^2
 ```
 
-## R^2 - Model 3
+## $R^2$ - Model 3
 
 ```{r}
 rsq(prostate$lpsa[prostate$train],
@@ -111,7 +121,6 @@ rsq(prostate$lpsa[!prostate$train],
 
 
 ## F test
-
 
  - Statistical style hypothesis test
  - Null hypothesis:
@@ -137,41 +146,55 @@ Fstat <- function (y,yhat1,yhat2,p1,p2) {
 
 ## Comparing model 2 to model 1 with the F test
 
+- Does the full model offer an improvement over the null model?
+
 ```{r}
 Fstat(prostate$lpsa[prostate$train],
-      predict(model2,newdata=prostate[prostate$train,]),
       predict(model1,newdata=prostate[prostate$train,]),
-      nrow((summary(model2))$coefficients),
-      nrow((summary(model1))$coefficients))
+      predict(model2,newdata=prostate[prostate$train,]),
+      nrow((summary(model1))$coefficients),
+      nrow((summary(model2))$coefficients))
 ```
 
 
 ## Comparing model 2 to model 3 with the F test
 
+- Does the full model offer an improvement over the "just right" model?
+
 ```{r}
 Fstat(prostate$lpsa[prostate$train],
-      predict(model2,newdata=prostate[prostate$train,]),
       predict(model3,newdata=prostate[prostate$train,]),
-      nrow((summary(model2))$coefficients),
-      nrow((summary(model3))$coefficients))
+      predict(model2,newdata=prostate[prostate$train,]),
+      nrow((summary(model3))$coefficients),
+      nrow((summary(model2))$coefficients))
 ```
 
 
 ## Comparing model 3 to model 1 with the F test
 
+- Does the "just right" model offer an improvement over the null model?
+
 ```{r}
 Fstat(prostate$lpsa[prostate$train],
-      predict(model3,newdata=prostate[prostate$train,]),
       predict(model1,newdata=prostate[prostate$train,]),
-      nrow((summary(model3))$coefficients),
-      nrow((summary(model1))$coefficients))
+      predict(model3,newdata=prostate[prostate$train,]),
+      nrow((summary(model1))$coefficients),
+      nrow((summary(model3))$coefficients))
 ```
 
-## Goodness of Fit - AIC and BIC
+## AIC and BIC
 
 - Motivated by the idea of incorporating a penalty for additional parameters
  - AIC = -2*log-likelihood + 2*npar
  - BIC = -2*log-likelihood + log(n)*npar
+- AIC
+ - Which model most adequately explains the data
+ - Asymptotically equivalent to cross-validation
+ - Better for prediction
+- BIC
+ - Which model from a set of candidates is true
+ - More consistent estimation of underlying data generation process
+ - Better for explanation
 
 ```{r}
 AIC(model1);
@@ -225,13 +248,14 @@ Source: "Elements of Statistical Learning", T.Hastie, R.Tibshirani, J.Friedman
 
 ## Cross-validation
 
-Like test/train/validate, but more efficient with data
+Like test/train/validate, but more efficient with data as it can be used both for model selection and performance estimation
+
    - Split data into k folds
-   - for each value of the "tuning parameter"
-     - for each fold
-       - fit a model to the remaining folds
-       - calculate the error on the held out fold
-     - Calculate the average error across all held out folds
+   - for each value of the "tuning parameters"
+     + for each fold
+       * fit a model to the remaining folds using this iteration's tuning parameters
+       * calculate the error on the held out fold
+     + Calculate the average error across all held out folds
    - select the value of the tuning parameter that minimises the error
    - fit a model to the entire data set using the selected tuning parameter value
 
@@ -247,11 +271,7 @@ cvresult <- data.frame(npreds = integer(0),
 
 nfolds <- 30;
 folds <- sample.int(nfolds,nrow(prostate),replace=TRUE);
-```
 
-## Cross-validation
-
-```{r}
 for (i in 1:length(preds)) {
   for (j in 1:nfolds) {
     test <- prostate[folds == j,];
@@ -276,7 +296,7 @@ for (i in 1:length(preds)) {
 ## Cross-validation
 
 ```{r}
-cvresult;
+head(cvresult);
 
 ```
 
@@ -347,19 +367,19 @@ sqrt(mean((predict(model4,newdata=prostate[!prostate$train,])-
 ## Interpretability - Dealing with a Black Box
 
  - If your preferred model is a "black box", all is not lost
-   - SVM
-   - Neural networks
-   - Anything that involves ensembles, bagging, boosting, etc
+   + SVM
+   + Neural networks
+   + Anything that involves ensembles, bagging, boosting, etc
  - Smart graphics can help reveal the structure:
-   - variable importance plots (randomForest, gbms)
-   - partial correlation plots
-   - standard regression diagnostics
+   + variable importance plots (randomForest, gbms)
+   + partial correlation plots
+   + standard regression diagnostics
 
 
 ## Interpretability - Standardised Formats
 
  - Some disciplines have standardised formats for expressing models:
-   - Credit scorecards
+   + Credit scorecards
  - Get to know what has been used before
 
 ## Implementation - Technology Stack
@@ -382,7 +402,11 @@ sqrt(mean((predict(model4,newdata=prostate[!prostate$train,])-
  - As usual, if this can be automated then it is better
 
 
-# Conclusion
+# Closing
+
+## Questions to think about
+
+ - Can we use the F statistics or AIC on models other than linear models? How do we calculate the degrees of freedom? (5.5.1 of Elements of Statistical Learning)
 
 ## Further reading
 
