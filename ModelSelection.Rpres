@@ -1,9 +1,10 @@
 Model Selection
 ========================================================
 author: Daniel Marlay
-date: 20 October 2015
+date: 28 July 2016
 width: 1368
 height: 768
+
 
 
 ```{r setup, echo=FALSE}
@@ -20,6 +21,16 @@ Why Model Selection
  - Improved business outcomes
  - Get your model implemented
  - Avoid overfitting
+ 
+ 
+ ----------- ------- --------------- -------------------------
+   First    row                12.0 Example of a row that
+                                    spans multiple lines.
+
+  Second    row                 5.0 Here's another one. Note
+                                    the blank line between
+                                    rows.
+----------- ------- --------------- -------------------------
  
  
 Dimensions that Influence Selection
@@ -159,7 +170,7 @@ Fstat(prostate$lpsa[prostate$train],
       predict(model1,newdata=prostate[prostate$train,]),
       predict(model2,newdata=prostate[prostate$train,]),
       nrow((summary(model1))$coefficients),
-      nrow((summary(model3))$coefficients))
+      nrow((summary(model2))$coefficients))
 ```
 
 
@@ -212,32 +223,36 @@ Goodness of Fit - Cross-validation
 ==================================
 ```{r}
 preds <- colnames(prostate[,1:8]);
-pcor <- cor(prostate[,9],prostate[,1:8]);
-preds <- preds[order(-abs(pcor))];
 
-cvresult <- data.frame(npreds = 1:8,
-                       cverr = rep(0,8),
-                       cverrse = rep(0,8));
-folds <- sample.int(20,nrow(prostate),replace=TRUE);
+cvresult <- data.frame(npreds = integer(0),
+                       fold = integer(0),
+                       cverr = numeric(0));
+
+nfolds <- 30;
+folds <- sample.int(nfolds,nrow(prostate),replace=TRUE);
 ```
 
 Goodness of Fit - Cross-validation
 ==================================
 ```{r}
-for (i in 1:8) {
-  errs <- rep(0,20);
-  for (j in 1:20) {
+for (i in 1:length(preds)) {
+  for (j in 1:nfolds) {
     test <- prostate[folds == j,];
     train <- prostate[folds != j,];
+    
+    pcor <- cor(train[,9],train[,1:8]);
+    opreds <- preds[order(-abs(pcor))];
+    
     mdl <- lm(paste("lpsa ~ ",
-                    paste(preds[1:i],collapse=" + "),sep=""),
+                    paste(opreds[1:i],collapse=" + "),sep=""),
               data=train);
     test.preds <- predict(mdl,newdata=test);
-    errs[j] <- sqrt(mean((test.preds-test$lpsa)^2));
+    err <- sqrt(mean((test.preds-test$lpsa)^2));
+    
+    cvresult <- rbind(cvresult,
+                      data.frame(npreds = i,fold = j,cverr = err))
+    }
   }
-  cvresult$cverr[i] <- mean(errs);
-  cvresult$cverrse[i] <- sd(errs);
-}
 
 ```
 
@@ -251,7 +266,16 @@ cvresult;
 Goodness of Fit - Cross-validation
 ==================================
 ```{r}
-plot(cverr ~ npreds,data=cvresult,type="l");
+plot(cverr ~ npreds,
+     data=aggregate(cverr ~ npreds,data=cvresult,mean),
+     type="l");
+
+```
+
+Goodness of Fit - Cross-validation
+==================================
+```{r}
+boxplot(cverr ~ npreds,data=cvresult);
 
 ```
 
@@ -260,8 +284,15 @@ Goodness of Fit - Cross-validation
 ```{r}
 model4 <- lm(paste("lpsa ~ ",
                     paste(preds[1:5],collapse=" + "),sep=""),
-              data=prostate);
+              data=prostate[prostate$train,]);
 summary(model4);
+```
+
+Goodness of Fit - Cross-validation
+==================================
+```{r}
+sqrt(mean((predict(model4,newdata=prostate[!prostate$train,])-
+             prostate$lpsa[!prostate$train])^2))
 ```
 
 
